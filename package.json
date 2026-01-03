@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "ts-node ./bin/server.ts",
-    "test": "NODE_ENV=test mocha -r ts-node/register tests/setup.ts --timeout 30000 tests/**/*.test.ts"
+    "test": "NODE_ENV=test mocha -r ts-node/register tests/setup.ts --timeout 30000 tests/**/*.test.ts",
+    "seed": "ts-node scripts/seed.ts"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
