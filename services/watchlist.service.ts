@@ -29,7 +29,7 @@ export const getWatchlist = async (
       }
     }
   } catch (err) {
-    console.error('Error fetching watchlist:', err);
+    console.log('Error fetching watchlist:', err);
     items = [];
   }
 
@@ -49,40 +49,44 @@ export const addToWatchlist = async (
   userId: string,
   item: WatchlistItem
 ) => {
-  // Check if item already exists
-  const existingWatchlist = await WatchlistModel.findOne({
-    userId,
-    'items.contentId': item.contentId
-  });
+  try {
+    // Check if item already exists
+    const existingWatchlist = await WatchlistModel.findOne({
+      userId,
+      'items.contentId': item.contentId
+    });
 
-  if (existingWatchlist) {
-    // Item already exists, don't add it again
+    if (existingWatchlist) {
+      // Item already exists, don't add it again
+      if (redis) {
+        await redis.del(`watchlist:${userId}`);
+      }
+      return { success: true, message: 'Item already in watchlist' };
+    }
+
+    // Item doesn't exist, add it
+    await WatchlistModel.updateOne(
+      { userId },
+      {
+        $push: {
+          items: {
+            contentId: item.contentId,
+            contentType: item.contentType,
+            addedAt: new Date()
+          }
+        }
+      },
+      { upsert: true }
+    );
+
     if (redis) {
       await redis.del(`watchlist:${userId}`);
     }
-    return { success: true, message: 'Item already in watchlist' };
+
+    return { success: true };
+  } catch (err: any) {
+    throw new Error(`Failed to add item to watchlist: ${err.message}`);
   }
-
-  // Item doesn't exist, add it
-  await WatchlistModel.updateOne(
-    { userId },
-    {
-      $push: {
-        items: {
-          contentId: item.contentId,
-          contentType: item.contentType,
-          addedAt: new Date()
-        }
-      }
-    },
-    { upsert: true }
-  );
-
-  if (redis) {
-    await redis.del(`watchlist:${userId}`);
-  }
-
-  return { success: true };
 };
 
 
@@ -90,18 +94,22 @@ export const removeFromWatchlist = async (
   userId: string,
   contentId: string
 ) => {
-  await WatchlistModel.updateOne(
-    { userId },
-    {
-      $pull: {
-        items: { contentId }
+  try {
+    await WatchlistModel.updateOne(
+      { userId },
+      {
+        $pull: {
+          items: { contentId }
+        }
       }
+    );
+
+    if (redis) {
+      await redis.del(`watchlist:${userId}`);
     }
-  );
 
-  if (redis) {
-    await redis.del(`watchlist:${userId}`);
+    return { success: true };
+  } catch (err: any) {
+    throw new Error(`Failed to remove item from watchlist: ${err.message}`);
   }
-
-  return { success: true };
 };

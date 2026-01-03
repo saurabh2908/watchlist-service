@@ -13,6 +13,9 @@ before(async function() {
     
     await mongoose.connect(mongoUri);
     console.log('✓ MongoDB connected for tests');
+    
+    await mongoose.connection.dropDatabase();
+    console.log('✓ Database cleared before tests');
   } catch (err) {
     console.error('✗ Failed to connect MongoDB for tests:', err);
     process.exit(1);
