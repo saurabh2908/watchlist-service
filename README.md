@@ -88,7 +88,7 @@ NODE_ENV=development
 
 ```
 npm install
-npm run dev
+npm start
 ```
 
 Server starts on `http://localhost:3000`
